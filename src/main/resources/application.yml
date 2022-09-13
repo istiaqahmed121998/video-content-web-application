@@ -1,0 +1,21 @@
+server:
+  port: 8000
+  error:
+    include-message: always
+spring:
+  application:
+    name: "Video Sharing App"
+  datasource:
+    username: root
+    password: 01712274429
+    url: jdbc:mysql://localhost:3306/video_sharing_database
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+logging:
+  level:
+    root: INFO,ERROR,DEBUG
