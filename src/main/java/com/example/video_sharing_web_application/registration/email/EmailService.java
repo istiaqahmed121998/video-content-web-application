@@ -17,9 +17,11 @@ import javax.mail.internet.MimeMessage;
 public class EmailService implements EmailSender{
     private final Logger LOGGER = LoggerFactory
             .getLogger(EmailService.class);
+
     private final JavaMailSender mailSender;
     @Override
     @Async
+
     public void send(String to, String email) {
        try {
            MimeMessage mimeMessage= mailSender.createMimeMessage();

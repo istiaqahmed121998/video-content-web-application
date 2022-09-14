@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.Collections;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -28,6 +29,8 @@ public class AppUser implements UserDetails {
     private String password;
     private Boolean locked=false;
     private Boolean enabled=false;
+
+
 
     public AppUser(String firstname, String lastname, String email, AppUserRole appUserRole, String password) {
         this.firstname = firstname;

@@ -30,7 +30,7 @@ public class RegistrationService {
         AppUser appUser = new AppUser(request.getFirstname(),request.getLastname(),request.getEmail(), AppUserRole.USER,request.getPassword());
         String token =appUserService.signUpUser(appUser);
 
-        String link = "http://localhost:8080/api/v1/registration/confirm?token=" + token;
+        String link = "http://localhost:8000/api/v1/registration/confirm?token=" + token;
         sender.send(
                 request.getEmail(),
                 buildEmail(request.getFirstname(), link));
