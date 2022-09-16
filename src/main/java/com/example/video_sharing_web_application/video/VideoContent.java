@@ -7,6 +7,8 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -24,9 +26,22 @@ public class VideoContent {
     private String videoUrl;
     @Column(nullable = false)
     private LocalDateTime addedAt;
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "app_user_id", nullable = false)
+    @ManyToOne(optional = false,fetch = FetchType.EAGER,cascade=CascadeType.MERGE)
     private AppUser appUser;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "liked_videos",
+            joinColumns =
+                    {
+                            @JoinColumn(name = "video_content_id", referencedColumnName = "id",
+                                    nullable = false, updatable = false)
+                    },
+            inverseJoinColumns =
+                    {
+                            @JoinColumn(name = "app_user_id", referencedColumnName = "id",
+                                    nullable = false, updatable = false)
+                    })
+    Set<AppUser> likes = new HashSet<>();
 
     public VideoContent(String videoUrl,String videoId,LocalDateTime addedAt, AppUser appUser) {
         this.videoUrl = videoUrl;

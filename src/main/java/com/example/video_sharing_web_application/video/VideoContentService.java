@@ -40,12 +40,11 @@ public class VideoContentService {
         return videoId;
     }
 
-    public ResponseEntity<Object> addVideoContent(String url) {
+    public ResponseEntity<Object> addVideoContent(String url,AppUser user) {
         if(validation.test(url)){
             String videoId=getVideoId(url);
-            VideoContent videoContent = new VideoContent(url,videoId, LocalDateTime.now(),new AppUser());
+            VideoContent videoContent = new VideoContent(url,videoId, LocalDateTime.now(),user);
             videoContentRepository.save(videoContent);
-
         }
         return null;
     }
