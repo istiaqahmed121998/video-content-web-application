@@ -3,6 +3,7 @@ package com.example.video_sharing_web_application.registration;
 import com.example.video_sharing_web_application.appuser.AppUser;
 import com.example.video_sharing_web_application.appuser.AppUserRole;
 import com.example.video_sharing_web_application.appuser.AppUserService;
+import com.example.video_sharing_web_application.exception.ResourceNotFoundException;
 import com.example.video_sharing_web_application.registration.email.EmailSender;
 import com.example.video_sharing_web_application.registration.token.ConfirmationToken;
 import com.example.video_sharing_web_application.registration.token.ConfirmationTokenService;
@@ -25,11 +26,10 @@ public class RegistrationService {
     public String register(RegistrationRequest request) {
         boolean isValidEmail=emailValidator.test(request.getEmail());
         if(!isValidEmail){
-            throw new IllegalStateException(String.format("%s email is not valid",request.getEmail()));
+            throw new ResourceNotFoundException(String.format("%s email is not valid",request.getEmail()));
         }
         AppUser appUser = new AppUser(request.getFirstname(),request.getLastname(),request.getEmail(), AppUserRole.USER,request.getPassword());
         String token =appUserService.signUpUser(appUser);
-
         String link = "http://localhost:8000/api/v1/registration/confirm?token=" + token;
         sender.send(
                 request.getEmail(),
@@ -108,7 +108,7 @@ public class RegistrationService {
 
 
     @Transactional
-    public String confirmToken(String token) {
+    public Boolean confirmToken(String token) {
         ConfirmationToken confirmationToken = confirmationTokenService.getToken(token)
                 .orElseThrow(()->{
             throw new IllegalStateException(String.format("%s token is not valid",token));
@@ -124,6 +124,6 @@ public class RegistrationService {
         confirmationTokenService.setConfirmedAt(token);
         appUserService.enableAppUser(
                 confirmationToken.getAppUser().getEmail());
-        return "confirmed";
+        return true;
     }
 }

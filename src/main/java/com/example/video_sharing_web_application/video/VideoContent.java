@@ -1,14 +1,19 @@
 package com.example.video_sharing_web_application.video;
 
 import com.example.video_sharing_web_application.appuser.AppUser;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Cascade;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import static org.hibernate.annotations.CascadeType.*;
 
 @Getter
 @Setter
@@ -20,16 +25,18 @@ public class VideoContent {
             strategy = GenerationType.IDENTITY
     )
     private Long id;
-    @Column(nullable = false)
+    @Column(nullable = false,unique = true)
     private String videoId;
     @Column(nullable = false)
     private String videoUrl;
     @Column(nullable = false)
     private LocalDateTime addedAt;
-    @ManyToOne(optional = false,fetch = FetchType.EAGER,cascade=CascadeType.MERGE)
+    @JsonIgnore
+    @ManyToOne(optional = false,fetch = FetchType.EAGER,cascade=CascadeType.ALL)
     private AppUser appUser;
-
-    @ManyToMany(fetch = FetchType.LAZY)
+//    @JsonManagedReference
+    @ManyToMany(fetch = FetchType.EAGER)
+    @Cascade({ SAVE_UPDATE,MERGE,PERSIST})
     @JoinTable(name = "liked_videos",
             joinColumns =
                     {

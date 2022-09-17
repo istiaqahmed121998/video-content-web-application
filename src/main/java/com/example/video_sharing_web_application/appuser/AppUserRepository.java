@@ -1,5 +1,6 @@
 package com.example.video_sharing_web_application.appuser;
 
+import com.example.video_sharing_web_application.video.VideoContent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -15,7 +17,8 @@ import java.util.Optional;
 public interface AppUserRepository extends JpaRepository<AppUser,Long> {
     Optional<AppUser> findByEmail(String email);
 
-
+//    List<AppUser> findAppUsersByLikedVideoContentsByVideoContentId(Long id);
+    List<AppUser> findAppUsersByLikedVideoContents(VideoContent likedVideoContents);
 
     @Transactional
     @Modifying

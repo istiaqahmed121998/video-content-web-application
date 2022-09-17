@@ -1,5 +1,6 @@
 package com.example.video_sharing_web_application.registration.email;
 
+import com.example.video_sharing_web_application.exception.ResourceNotFoundException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,12 +32,9 @@ public class EmailService implements EmailSender{
            helper.setSubject("Confirm your email");
            helper.setFrom("xyz@example.com");
            mailSender.send(mimeMessage);
-
-
        }
        catch (MessagingException e){
-           LOGGER.error("failed to send email",e);
-           throw new IllegalStateException("failed to send mail");
+           throw new ResourceNotFoundException(String.format("failed to send mail %s",e.getMessage()));
        }
     }
 }

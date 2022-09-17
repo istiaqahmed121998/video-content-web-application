@@ -7,6 +7,7 @@ import com.auth0.jwt.exceptions.JWTCreationException;
 import com.example.video_sharing_web_application.appuser.AppUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,7 +29,7 @@ import java.util.stream.Collectors;
 import static com.example.video_sharing_web_application.security.SecurityConstants.*;
 import static javax.servlet.http.HttpServletResponse.SC_FORBIDDEN;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
+@Slf4j
 @AllArgsConstructor
 public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final AuthenticationManager authenticationManager;
@@ -39,11 +40,24 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
             AppUser user = new ObjectMapper().readValue(request.getInputStream(),AppUser.class);
             String username= user.getEmail();
             String password = user.getPassword();
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
-            return authenticationManager.authenticate(authenticationToken);
+
+            try {
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
+                return authenticationManager.authenticate(authenticationToken);
+            }
+            catch (AuthenticationException e){
+                response.setContentType(APPLICATION_JSON_VALUE);
+                new ObjectMapper().writeValue(response.getOutputStream(), Map.of("status", 403,"message","Bad Credentials"));
+            }
+
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            try {
+                new ObjectMapper().writeValue(response.getOutputStream(),e.getMessage());
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
+        return null;
     }
 
     @Override
@@ -62,7 +76,8 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
                     .withExpiresAt(new Date(System.currentTimeMillis()+REFRESH_TOKEN_EXPIRATION_TIME))
                     .withIssuer(JWT_ISSUER)
                     .sign(algorithm);
-            Map<String,String> tokens = new HashMap<>();
+            Map<String,Object> tokens = new HashMap<>();
+            tokens.put("status",200);
             tokens.put("access_token",access_token);
             tokens.put("refresh_token",refresh_token);
             response.setContentType(APPLICATION_JSON_VALUE);
@@ -72,5 +87,15 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
             response.setContentType(APPLICATION_JSON_VALUE);
             new ObjectMapper().writeValue(response.getOutputStream(),exception);
         }
+    }
+
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+        logger.info("Authentication failed");
+
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setContentType(APPLICATION_JSON_VALUE);
+        response.getWriter().print(authException.getLocalizedMessage());
+        response.getWriter().flush();
     }
 }

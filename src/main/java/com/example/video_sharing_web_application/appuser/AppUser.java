@@ -1,9 +1,13 @@
 package com.example.video_sharing_web_application.appuser;
 
 import com.example.video_sharing_web_application.video.VideoContent;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +15,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import javax.persistence.*;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -28,13 +33,18 @@ public class AppUser implements UserDetails {
     private String lastname;
 
     private String email;
+
     @Enumerated(EnumType.STRING)
     private AppUserRole appUserRole;
-    private String password;
-    private Boolean locked=false;
-    private Boolean enabled=false;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
+    private String password;
+
+    private Boolean locked=false;
+
+    private Boolean enabled=false;
+//    @JsonBackReference
+    @ManyToMany(fetch = FetchType.EAGER)
+    @Cascade({ CascadeType.SAVE_UPDATE, CascadeType.MERGE, CascadeType.PERSIST})
     @JoinTable(name = "liked_videos",
             joinColumns =
                     {
@@ -46,7 +56,8 @@ public class AppUser implements UserDetails {
                     @JoinColumn(name = "video_content_id", referencedColumnName = "id",
                             nullable = false, updatable = false)
                     })
-    Set<VideoContent> likedVideoContents;
+        @JsonIgnore
+    Set<VideoContent> likedVideoContents= new HashSet<>();
 
     public AppUser(String firstname, String lastname, String email, AppUserRole appUserRole, String password) {
         this.firstname = firstname;
@@ -57,21 +68,25 @@ public class AppUser implements UserDetails {
     }
 
 
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(appUserRole.name());
         return Collections.singletonList(authority);
     }
 
+
     @Override
     public String getPassword() {
         return password;
     }
 
+
     @Override
     public String getUsername() {
         return email;
     }
+
 
 
     @Override

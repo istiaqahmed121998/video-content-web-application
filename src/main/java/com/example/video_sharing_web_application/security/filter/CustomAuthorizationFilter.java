@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 import static com.example.video_sharing_web_application.security.SecurityConstants.*;
 import static java.util.Arrays.stream;
@@ -56,7 +57,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 } catch (JWTVerificationException exception){
                     response.setStatus(SC_FORBIDDEN);
                     response.setContentType(APPLICATION_JSON_VALUE);
-                    new ObjectMapper().writeValue(response.getOutputStream(),exception.getMessage());
+
+                    new ObjectMapper().writeValue(response.getOutputStream(), Map.of("status",403,"message",exception.getMessage()));
                 }
             }
             else{
