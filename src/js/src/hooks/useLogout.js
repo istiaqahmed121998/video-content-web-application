@@ -2,8 +2,10 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import useAuth from "./useAuth";
 
+
 const useLogout = () => {
   const navigate = useNavigate();
+
   const location = useLocation();
   const { setAuth } = useAuth();
 
@@ -15,6 +17,7 @@ const useLogout = () => {
       if (response?.data) {
         console.log(response.data);
         setAuth({});
+
       }
       navigate(location.pathname);
     } catch (err) {

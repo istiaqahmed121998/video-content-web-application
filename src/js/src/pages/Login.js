@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import axios from "../api/axios";
 import useAuth from "../hooks/useAuth";
+import useToggle from "../hooks/useToggle";
 const Body = styled.div`
   height: 100%;
   display: -ms-flexbox;
@@ -23,11 +24,10 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errMsg, setErrMsg] = useState("");
-
   const { auth, setAuth } = useAuth();
-
   const navigate = useNavigate();
   const location = useLocation();
+  const [check, toggleCheck] = useToggle("remember_me", false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -59,13 +59,11 @@ const Login = () => {
     }
   };
   useEffect(() => {
-    
-    let isAuth =auth.email;
-    if(isAuth && isAuth !== null) {
-        navigate("/");
+    let isAuth = auth.email;
+    if (isAuth && isAuth !== null) {
+      navigate("/");
     }
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+  }, [auth.email, navigate]);
   return (
     <>
       <Body className="text-center">
@@ -113,6 +111,17 @@ const Login = () => {
                       required
                     />
                     <label htmlFor="floatingPassword">Password</label>
+                  </div>
+                  <div className="checkbox mb-3">
+                    <label>
+                      <input
+                        type="checkbox"
+                        id="remember_me"
+                        onChange={toggleCheck}
+                        checked={check}
+                      />
+                      Remember me
+                    </label>
                   </div>
                   <button
                     className="w-100 mb-2 btn btn-lg rounded-3 btn-primary"

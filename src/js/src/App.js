@@ -21,10 +21,9 @@ function App() {
           <Route element={<PersistLogin />}>
             <Route index element={<Home />} />
             <Route path="videos" element={<Videos />} />
+            <Route path="videos/:id" element={<Videos />} />
             <Route element={<RequireAuth />}>
               <Route path="dashboard/videos/add" element={<AddVideo />} />
-
-              
             </Route>
             <Route path="video/:id" element={<VideoPage />} />
           </Route>

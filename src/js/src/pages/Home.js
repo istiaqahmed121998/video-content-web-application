@@ -1,31 +1,38 @@
-import VideoContent from "../components/VideoContent";
-import { Col, Row } from "react-bootstrap";
-import "../css/style.css";
 import { useEffect, useState } from "react";
+import { Col, Row } from "react-bootstrap";
 import axios from "../api/axios";
+import VideoContent from "../components/VideoContent";
+import "../css/style.css";
 
 const Home = () => {
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [errMsg, setErrMsg] = useState(true);
+  const [errMsg, setErrMsg] = useState("");
 
   useEffect(() => {
     const getVideos = async (count) => {
       try {
-        const response = await axios.get(`video/latest/${count}`, {
+        const response = await axios.get(`video/?size=${count}`, {
           headers: { "Content-Type": "application/json" },
         });
-        if (response?.data) {
-          setVideos(response.data.data);
+
+        if (response?.data && response.data?.httpStatusCode===200) {
+          response.data.data.videoContents && response.data.data.videoContents.length > 0
+            ? setVideos(response.data.data.videoContents)
+            : setErrMsg("Not enough video");
           setIsLoading(false);
+
         }
+
       } catch (err) {
         if (!err?.response) {
           setErrMsg("No Server Response");
         } else if (err.response?.status === 400) {
           setErrMsg(err.response.data.message);
-        } else {
+        } else if (err.response?.status === 401) {
           setErrMsg("Login Failed");
+        } else {
+          setErrMsg("No Server Response");
         }
         setIsLoading(false);
       }
@@ -43,20 +50,26 @@ const Home = () => {
         <Row>
           <Col lg="1"></Col>
           <Col lg="10">
+            
             <Row className="justify-content-sm-center g-4" xs={1} md={2} lg={2}>
               {!isLoading && videos.length > 0 ? (
+              
                 videos.map((video, i) => (
                   <VideoContent key={i} video={video}></VideoContent>
+                  
                 ))
               ) : (
                 <>
                   <div class="d-flex justify-content-center">
-                    <div class="alert alert-danger" role="alert">
-                      {errMsg}
-                    </div>
-                    <div class="spinner-border" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
+                    {errMsg ? (
+                      <div class="alert alert-danger" role="alert">
+                        {errMsg}
+                      </div>
+                    ) : (
+                      <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                      </div>
+                    )}
                   </div>
                 </>
               )}

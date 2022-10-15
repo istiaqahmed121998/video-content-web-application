@@ -29,9 +29,7 @@ const intial=props.user.split(" ").map((n)=>n[0]).join("");
               </div>
             </div>
             <div>
-              <p>
                 <p class="lh-sm font-monospace">{props.comment}</p>
-              </p>
             </div>
             <div>
               <FontAwesomeIcon icon={faThumbsUp} size="sm"></FontAwesomeIcon>

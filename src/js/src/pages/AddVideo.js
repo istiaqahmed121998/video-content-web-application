@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+// import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
+import useAuth from "../hooks/useAuth";
 const AddVideo = () => {
   const [videourl, setVideoUrl] = useState("");
   const [errormessage, setErrorMessage] = useState([]);
   const [message, setMessage] = useState([]);
   const [show, setShow] = useState([]);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { auth } = useAuth();
+  // const navigate = useNavigate();
+  // const location = useLocation();
   useEffect(() => {
     setErrorMessage([]);
     setMessage("");
     setShow(false);
-  }, [videourl]);
+    console.warn("click")
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -20,22 +23,26 @@ const AddVideo = () => {
         "/video/add",
         JSON.stringify({ url: videourl }),
         {
-          headers: { "Content-Type": "application/json" ,},
-          //   withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth?.access_token}`,
+          },
         }
       );
       if (response?.data) {
         setMessage(response.data.message);
+        setErrorMessage("")
+        setVideoUrl("");
         setShow(true);
       }
     } catch (err) {
       if (!err?.response) {
+        setMessage("")
         setErrorMessage(["Server Error"]);
         setShow(true);
       } else if (err.response.status) {
         setErrorMessage(err.response.data.errors);
         setShow(true);
-
       }
     }
   };

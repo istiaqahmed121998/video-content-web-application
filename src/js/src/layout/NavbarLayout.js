@@ -1,14 +1,22 @@
-import { Navbar, Nav, Button, NavDropdown, Image } from "react-bootstrap";
-import { Link, useLocation } from "react-router-dom";
+import { useEffect } from 'react';
+import { Button, Image, Nav, Navbar, NavDropdown } from 'react-bootstrap';
+import { Link, useLocation } from 'react-router-dom';
 import useAuth from "../hooks/useAuth";
 import useLogout from "../hooks/useLogout";
+import useToggle from "../hooks/useToggle";
 const NavbarLayout = () => {
+  const [check, toggleCheck] = useToggle("remember_me", false);
   const { auth } = useAuth();
   const location=useLocation();
   const logout = useLogout();
   const signOut = async()=>{
-    await logout()
+    await logout();
+    if(check)
+      toggleCheck()
   }
+  useEffect(()=>{
+
+  },[check])
 
   return (
     <Navbar className="d-flex nav-pills nav-justified flex-wrap align-items-center justify-content-center justify-content-lg-start">
@@ -37,6 +45,9 @@ const NavbarLayout = () => {
           <li className="nav-item">
             <Link className={`nav-link ${location.pathname==='/videos'?'active':""} `} aria-current="page" to="/videos">Videos</Link>
           </li>
+          <li className="nav-item">
+            <Link className={`nav-link ${location.pathname==='/dashboard/videos/add'?'active':""} `} aria-current="page" to="/dashboard/videos/add">Add</Link>
+          </li>
         </Nav>
       </Navbar.Collapse>
       <form className="col-12 col-lg-auto mb-3 mb-lg-0 me-lg-3" role="search">
@@ -48,7 +59,7 @@ const NavbarLayout = () => {
         />
       </form>
       <div className="text-end">
-        {auth?.email ? (
+        {auth?.email || check ? (
           <NavDropdown
             align="end"
             title={

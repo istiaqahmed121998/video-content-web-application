@@ -1,18 +1,19 @@
+import { createAvatar } from "@dicebear/avatars";
+import * as style from "@dicebear/avatars-initials-sprites";
 import {
   faShare,
   faThumbsDown,
   faThumbsUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import moment from "moment";
 import { useEffect, useState } from "react";
-import { Card, Col, ListGroup, Row } from "react-bootstrap";
-import { useParams } from "react-router-dom";
-import { Image } from "react-bootstrap";
-import auth from "../hooks/useAuth";
-import { createAvatar } from "@dicebear/avatars";
-import * as style from "@dicebear/avatars-initials-sprites";
-import Comment from "../components/Comment";
+import { Card, Col, Image, ListGroup, Row } from "react-bootstrap";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "../api/axios";
+import Comment from "../components/Comment";
+import { default as auth, default as useAuth } from "../hooks/useAuth";
+
 const intial = auth?.email
   ? auth.email
       .split(" ")
@@ -29,12 +30,18 @@ const VideoPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [video, setVideo] = useState({});
   const [likes, setLikes] = useState(0);
+  const [isLike, setIsLike] = useState(false);
+  const { auth } = useAuth();
+  // const [dislikes, setDisLikes] = useState(0);
   const [comments, setComments] = useState([]);
-  const [isCommentUpdated, setIsCommentUpdated] = useState(false);
+  // const [isCommentUpdated, setIsCommentUpdated] = useState(false);
   const [errMsg, setErrMsg] = useState("");
+
   const params = useParams();
   const [youtubeInfo, setYoutubeInfo] = useState({});
-  const [comment,setComment] = useState('');
+  const [comment, setComment] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const youtubeVideoInfo = async (videoid) => {
@@ -43,7 +50,7 @@ const VideoPage = () => {
           `https://www.googleapis.com/youtube/v3/videos?part=id%2C+snippet&id=${videoid}&key=AIzaSyCQTslsFwC9aBDLEGIDMCzN71q-Tercfbk`
         );
         if (videoResponse?.data) {
-          if (videoResponse.data.pageInfo.totalResults === 1) {
+          if (videoResponse.data?.pageInfo?.totalResults === 1) {
             setYoutubeInfo({
               title: videoResponse.data.items[0].snippet.title,
               description: videoResponse.data.items[0].snippet.description,
@@ -67,13 +74,27 @@ const VideoPage = () => {
     const getVideoInfo = async (id) => {
       try {
         const response = await axios.get(`/video/${id}`, {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: auth?.access_token
+              ? `Bearer ${auth.access_token}`
+              : "",
+          },
         });
         if (response?.data) {
-          const videocontent = response.data.data[0];
+          const videocontent = response.data.data.video_details;
           setVideo(videocontent);
           setLikes(videocontent.likeCount);
           youtubeVideoInfo(videocontent.videoId);
+          if (
+            response.data.data.isLike === null ||
+            !response.data.data.isLike
+          ) {
+            setIsLike(false);
+          } else {
+            setLikes((prev) => prev - 1);
+            setIsLike(true);
+          }
         }
       } catch (err) {
         if (!err?.response) {
@@ -87,136 +108,203 @@ const VideoPage = () => {
       }
     };
     getVideoInfo(params.id);
-  }, [params]);
-  useEffect(()=>{
-    setIsCommentUpdated(true)
-  },[comments])
+  }, [params.id]);
 
-  const commentSubmission=(e)=>{
+  useEffect(() => {
+    if (!auth?.access_token) {
+      if (isLike === true) {
+        setLikes(prev=>prev+1)
+        setIsLike(false);
+      }
+    }
+  }, [auth?.access_token]);
+  useEffect(() => {
+    function handleScrollEvent() {
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+        console.log("you're at the bottom of the page");
+        // here add more items in the 'filteredData' state from the 'allData' state source.
+      }
+    }
+    window.addEventListener("scroll", handleScrollEvent);
+    return () => {
+      window.removeEventListener("scroll", handleScrollEvent);
+    };
+  }, []);
+  useEffect(() => {
+    if (isLike) setLikes((prev) => prev + 1);
+    else setLikes((prev) => prev - 1);
+  }, [isLike]);
+  const videoLike = async (e) => {
+    if (!auth?.access_token)
+      navigate("/login", { state: { previousUrl: location.pathname } });
+    try {
+      const response = await axios.get(`/video/like/${params.id}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${auth?.access_token}`,
+        },
+      });
+      if (response?.data) {
+        setIsLike((prev) => !prev);
+      }
+    } catch (err) {
+      if (!err?.response) {
+        setErrMsg("No Server Response");
+      } else if (err.response?.status === 400) {
+        setErrMsg("Missing Username or Password");
+      } else if (err.response?.status === 401) {
+        setErrMsg("Unauthorized");
+      } else {
+        setErrMsg("Login Failed");
+      }
+    }
+  };
+
+  const commentSubmission = (e) => {
     e.preventDefault();
-    alert("Upcoming")
-  }
+    setComments([
+      {
+        user: "jhony",
+        addedAt: "null",
+        commenttext: comment,
+        like: 0,
+        dislike: 0,
+      },
+      ...comments,
+    ]);
+    setComment("");
+  };
   return (
     <>
       <Row>
         <Col lg={7}>
           <div className="vstack gap-3">
-            {isLoading ? (
+            {isLoading || errMsg ? (
               <>
-                <div class="text-center">
+                <div className="text-center">
                   <div
-                    class="spinner-border"
+                    className="spinner-border"
                     style={{ width: "3rem", height: "3rem" }}
                     role="status"
                   >
-                    <span class="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">Loading...</span>
                   </div>
                 </div>
               </>
             ) : (
               <>
-                <div className="ratio ratio-16x9">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${video.videoId}`}
-                    title="YouTube video"
-                    allowFullScreen
-                  ></iframe>
-                </div>
+                <>
+                  <div className="ratio ratio-16x9">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${video.videoId}`}
+                      title="YouTube video"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                  <Row>
+                    <p className="h5">{youtubeInfo.title}</p>
+                  </Row>
+                  <Row>
+                    <Col lg={10}>
+                      <span className="pe-3">
+                        <strong>
+                          {0} views{" "}
+                          {moment(video.addedAt).format("DD-MMM-YYYY")}
+                        </strong>
+                      </span>
+                      {!isMore && (
+                        <>
+                          {youtubeInfo.description
+                            .split(" ")
+                            .slice(0, 15)
+                            .join(" ")}{" "}
+                          <span
+                            className="bold"
+                            style={{ cursor: "pointer" }}
+                            onClick={(e) => {
+                              setIsMore(true);
+                            }}
+                          >
+                            <strong>more..</strong>
+                          </span>
+                        </>
+                      )}
+                      {isMore && youtubeInfo.description}
+                    </Col>
+                  </Row>
+                </>
+
                 <Row>
-                  <p className="h5">{youtubeInfo.title}</p>
-                </Row>
-                <Row>
-                  <Col lg={10}>
-                    <span className="pe-3">
-                      <strong>15,20,894 views 03-Dec-2017</strong>
+                  <Col lg={12}>
+                    <span
+                      className="pe-3"
+                      style={{ cursor: "pointer" }}
+                      onClick={videoLike}
+                    >
+                      <FontAwesomeIcon
+                        icon={faThumbsUp}
+                        size="lg"
+                        style={isLike ? { color: "red" } : {}}
+                      ></FontAwesomeIcon>
+                      <span className="ps-2">{likes} </span>
                     </span>
-                    {!isMore && (
-                      <>
-                        {youtubeInfo.description
-                          .split(" ")
-                          .slice(0, 15)
-                          .join(" ")}{" "}
-                        <span
-                          className="bold"
-                          style={{ cursor: "pointer" }}
-                          onClick={(e) => {
-                            setIsMore(true);
-                          }}
-                        >
-                          <strong>more..</strong>
-                        </span>
-                      </>
-                    )}
-                    {isMore && youtubeInfo.description}
+                    <span
+                      className="px-3"
+                      onClick={(e) => {
+                        console.log("Dislike");
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faThumbsDown}
+                        size="lg"
+                      ></FontAwesomeIcon>
+                      <span className="ps-2">{0}</span>
+                    </span>
+                    <span
+                      className="px-3"
+                      onClick={(e) => {
+                        console.log("Share");
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <FontAwesomeIcon icon={faShare}></FontAwesomeIcon>
+                      <span className="ps-2">Share</span>
+                    </span>
+                  </Col>
+                </Row>
+                <Row className="justify-content-around">
+                  <Col lg={5} className="border rounded border-light">
+                    <Image
+                      src="https://yt3.ggpht.com/ytc/AMLnZu9zaROEq2bUuxEyDgsL_W8FXknYbfgA5RH2-XXUGw=s88-c-k-c0x00ffffff-no-rj"
+                      roundedCircle
+                    />
+                    <span className=" px-3 my-2">
+                      {youtubeInfo.channelTitle}{" "}
+                    </span>
+                  </Col>
+                  <Col lg={5} className="border rounded border-light">
+                    <Image
+                      src="https://yt3.ggpht.com/ytc/AMLnZu9zaROEq2bUuxEyDgsL_W8FXknYbfgA5RH2-XXUGw=s88-c-k-c0x00ffffff-no-rj"
+                      roundedCircle
+                    />
+                    <span className=" px-3 my-2">
+                      {video.addedByUser.profileName}{" "}
+                    </span>
                   </Col>
                 </Row>
               </>
             )}
-
-            <Row>
-              <Col lg={12}>
-                <span
-                  className="pe-3"
-                  style={{ cursor: "pointer" }}
-                  onClick={(e) => {
-                    console.log("Liked");
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={faThumbsUp}
-                    size="lg"
-                    className="font-upload"
-                  ></FontAwesomeIcon>
-                  <span className="ps-2">Like </span>
-                </span>
-                <span
-                  className="px-3"
-                  onClick={(e) => {
-                    console.log("Dislike");
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <FontAwesomeIcon
-                    icon={faThumbsDown}
-                    size="lg"
-                  ></FontAwesomeIcon>
-                  <span className="ps-2">Dislike</span>
-                </span>
-                <span
-                  className="px-3"
-                  onClick={(e) => {
-                    console.log("Share");
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <FontAwesomeIcon icon={faShare}></FontAwesomeIcon>
-                  Share
-                </span>
-              </Col>
-            </Row>
-            <Row className="justify-content-around">
-              <Col lg={5} className="border rounded border-light">
-                <Image
-                  src="https://yt3.ggpht.com/ytc/AMLnZu9zaROEq2bUuxEyDgsL_W8FXknYbfgA5RH2-XXUGw=s88-c-k-c0x00ffffff-no-rj"
-                  roundedCircle
-                />
-                <span className=" px-3 my-2">SVF </span>
-              </Col>
-              <Col lg={5} className="border rounded border-light">
-                <Image
-                  src="https://yt3.ggpht.com/ytc/AMLnZu9zaROEq2bUuxEyDgsL_W8FXknYbfgA5RH2-XXUGw=s88-c-k-c0x00ffffff-no-rj"
-                  roundedCircle
-                />
-                <span className=" px-3 my-2">SVF </span>
-              </Col>
-            </Row>
             <Row className="">
               <Col lg={5} className="border border-light">
                 <span className="pe-3">500k</span>Comments Coming soon
               </Col>
             </Row>
             <Row>
-              <form className="row row-cols-lg-auto g-2 align-items-center" onSubmit={commentSubmission}>
+              <form
+                className="row row-cols-lg-auto g-2 align-items-center"
+                onSubmit={commentSubmission}
+              >
                 <Col
                   xs={9}
                   sm={10}
@@ -238,8 +326,7 @@ const VideoPage = () => {
                       id="comment"
                       name="comment"
                       value={comment}
-                      onChange={e=>setComment(e.target.value)}
-        
+                      onChange={(e) => setComment(e.target.value)}
                     ></textarea>
                   </div>
                 </Col>
@@ -259,19 +346,17 @@ const VideoPage = () => {
             <Row>
               <Col>
                 <ul className="list-group list-group-flush">
-                  {comments.length > 0 && 
-                  comments.map((comm,i)=>{
-                    <Comment
-                      user={comm.user}
-                      commentTime={comm.addedAt}
-                      comment={
-                        comm.commenttext}
-                      like={comm.like}
-                      dislike={comm.like}
-                    />
-                  })
-
-                  }
+                  {comments.length > 0 &&
+                    comments.map((comm, i) => (
+                      <Comment
+                        key={i}
+                        user={comm.user}
+                        commentTime={comm.addedAt}
+                        comment={comm.commenttext}
+                        like={comm.like}
+                        dislike={comm.like}
+                      />
+                    ))}
                 </ul>
               </Col>
             </Row>
