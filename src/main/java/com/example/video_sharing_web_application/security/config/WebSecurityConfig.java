@@ -52,6 +52,13 @@ public class WebSecurityConfig {
         http.cors();
         http.csrf().disable();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+//        http.authorizeRequests().antMatchers( "/","/favicon.ico","/*.js","/**/*.css","/*.css.map","/*.js.map").permitAll();
+        http
+                .authorizeRequests()
+                .antMatchers("/","/static/**").permitAll();
+        http
+                .authorizeRequests()
+                .antMatchers(HttpMethod.GET,"/**/*.jpg","/**/*.png","/**/*.jpeg","/**/*.txt","/**/*.ico","/**/*.json").permitAll();
         http.authorizeRequests().antMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
         http.authorizeRequests().antMatchers(HttpMethod.POST,"/api/v1/login/**").permitAll();
         http.authorizeRequests().antMatchers("/api/v1/registration/**").permitAll();
@@ -73,6 +80,8 @@ public class WebSecurityConfig {
         return http.build();
 
     }
+
+
 
     @Bean
     public AuthenticationManager authenticationManagerBean() throws Exception{
