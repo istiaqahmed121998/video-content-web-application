@@ -1,6 +1,6 @@
 package com.example.video_sharing_web_application.registration.email;
 
-import com.example.video_sharing_web_application.exception.ResourceNotFoundException;
+import com.example.video_sharing_web_application.exception.ApiRequestException;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,6 @@ public class EmailService implements EmailSender{
     private final JavaMailSender mailSender;
     @Override
     @Async
-
     public void send(String to, String email) {
        try {
            MimeMessage mimeMessage= mailSender.createMimeMessage();
@@ -33,8 +32,8 @@ public class EmailService implements EmailSender{
            helper.setFrom("xyz@example.com");
            mailSender.send(mimeMessage);
        }
-       catch (MessagingException e){
-           throw new ResourceNotFoundException(String.format("failed to send mail %s",e.getMessage()));
+       catch (MessagingException ex){
+           throw new ApiRequestException(String.format("failed to send mail %s",ex.getMessage()));
        }
     }
 }

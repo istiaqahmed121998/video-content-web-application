@@ -6,8 +6,11 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.video_sharing_web_application.appuser.AppUserRole;
+import com.example.video_sharing_web_application.exception.ApiError;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,7 +23,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 import static com.example.video_sharing_web_application.security.SecurityConstants.*;
 import static java.util.Arrays.stream;
@@ -32,8 +34,8 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
 
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if(request.getServletPath().equals(LOGIN_URL) && request.getServletPath().equals(SIGN_UP_URL)){
+    protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain) throws ServletException, IOException {
+        if(request.getServletPath().equals(LOGIN_URL) || request.getServletPath().equals(SIGN_UP_URL) || request.getServletPath().equals(REFRESH_TOKEN_URL)){
             filterChain.doFilter(request,response);
         }
         else {
@@ -57,8 +59,7 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
                 } catch (JWTVerificationException exception){
                     response.setStatus(SC_FORBIDDEN);
                     response.setContentType(APPLICATION_JSON_VALUE);
-
-                    new ObjectMapper().writeValue(response.getOutputStream(), Map.of("status",403,"message",exception.getMessage()));
+                    new ObjectMapper().writeValue(response.getOutputStream(),  new ApiError(HttpStatus.UNAUTHORIZED,exception.getLocalizedMessage(),exception.getMessage()));
                 }
             }
             else{

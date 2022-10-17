@@ -1,74 +1,46 @@
 package com.example.video_sharing_web_application.appuser;
 
-import com.example.video_sharing_web_application.video.VideoContent;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import com.example.video_sharing_web_application.user.User;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Cascade;
-import org.hibernate.annotations.CascadeType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
+import javax.validation.constraints.Email;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
 
+@Entity
 @Getter
 @Setter
 @NoArgsConstructor
-@Entity
+@EqualsAndHashCode
 public class AppUser implements UserDetails {
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.IDENTITY
-    )
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="app_user_seq_gen")
+    @SequenceGenerator(name="app_user_seq_gen", sequenceName="APP_USER_SEQ")
     private long id;
-
-    private String firstname;
-    private String lastname;
-
+    @Email
     private String email;
-
+    private String password;
     @Enumerated(EnumType.STRING)
     private AppUserRole appUserRole;
 
-    private String password;
-
+    @OneToOne
+    private User user;
     private Boolean locked=false;
-
     private Boolean enabled=false;
-//    @JsonBackReference
-    @ManyToMany(fetch = FetchType.EAGER)
-    @Cascade({ CascadeType.SAVE_UPDATE, CascadeType.MERGE, CascadeType.PERSIST})
-    @JoinTable(name = "liked_videos",
-            joinColumns =
-                    {
-                    @JoinColumn(name = "app_user_id", referencedColumnName = "id",
-                            nullable = false, updatable = false)
-                    },
-            inverseJoinColumns =
-                    {
-                    @JoinColumn(name = "video_content_id", referencedColumnName = "id",
-                            nullable = false, updatable = false)
-                    })
-        @JsonIgnore
-    Set<VideoContent> likedVideoContents= new HashSet<>();
-
-    public AppUser(String firstname, String lastname, String email, AppUserRole appUserRole, String password) {
-        this.firstname = firstname;
-        this.lastname = lastname;
-        this.email = email;
+    public AppUser(String email, String password, AppUserRole appUserRole,User user) {
+        this.email=email;
         this.appUserRole = appUserRole;
         this.password = password;
+        this.user=user;
     }
-
-
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         SimpleGrantedAuthority authority = new SimpleGrantedAuthority(appUserRole.name());

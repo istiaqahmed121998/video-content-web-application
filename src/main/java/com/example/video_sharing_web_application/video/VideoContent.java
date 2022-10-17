@@ -1,7 +1,7 @@
 package com.example.video_sharing_web_application.video;
 
-import com.example.video_sharing_web_application.appuser.AppUser;
-
+import com.example.video_sharing_web_application.user.User;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,22 +21,21 @@ import static org.hibernate.annotations.CascadeType.*;
 @Entity
 public class VideoContent {
     @Id
-    @GeneratedValue(
-            strategy = GenerationType.IDENTITY
-    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "video_content_seq_gen")
+    @SequenceGenerator(name = "video_content_seq_gen", sequenceName = "VIDEO_CONTENT_SEQ")
     private Long id;
-    @Column(nullable = false,unique = true)
+    @Column(nullable = false)
     private String videoId;
     @Column(nullable = false)
-    private String videoUrl;
-    @Column(nullable = false)
     private LocalDateTime addedAt;
-    @JsonIgnore
-    @ManyToOne(optional = false,fetch = FetchType.EAGER,cascade=CascadeType.ALL)
-    private AppUser appUser;
-//    @JsonManagedReference
-    @ManyToMany(fetch = FetchType.EAGER)
-    @Cascade({ SAVE_UPDATE,MERGE,PERSIST})
+
+    @ManyToOne(optional = false, fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
+    private User addedByUser;
+
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @Cascade({SAVE_UPDATE, MERGE, PERSIST})
     @JoinTable(name = "liked_videos",
             joinColumns =
                     {
@@ -45,15 +44,29 @@ public class VideoContent {
                     },
             inverseJoinColumns =
                     {
-                            @JoinColumn(name = "app_user_id", referencedColumnName = "id",
+                            @JoinColumn(name = "user_id", referencedColumnName = "id",
                                     nullable = false, updatable = false)
                     })
-    Set<AppUser> likes = new HashSet<>();
+    @JsonIgnore
+    Set<User> likes = new HashSet<>();
 
-    public VideoContent(String videoUrl,String videoId,LocalDateTime addedAt, AppUser appUser) {
-        this.videoUrl = videoUrl;
-        this.videoId=videoId;
-        this.addedAt=addedAt;
-        this.appUser = appUser;
+
+    public VideoContent(String videoId, LocalDateTime addedAt, User addedByUser) {
+        this.videoId = videoId;
+        this.addedAt = addedAt;
+        this.addedByUser = addedByUser;
+    }
+
+    public void addLikedVideo(User user) {
+        likes.add(user);
+    }
+
+    public void removeLikedVideo(User user) {
+        likes.remove(user);
+    }
+
+    @JsonGetter
+    public int getLikeCount() {
+        return likes.size();
     }
 }

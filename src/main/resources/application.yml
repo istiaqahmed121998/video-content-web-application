@@ -1,9 +1,22 @@
-
+logging:
+  level:
+    org:
+      hibernate:
+        stat: debug
 server:
   port: 8000
   error:
     include-message: always
+    include-binding-errors: always
+    whitelabel:
+      enabled: false
+debug: true
 spring:
+
+  main:
+    allow-bean-definition-overriding: true
+  mvc:
+    throw-exception-if-no-handler-found: true
   application:
     name: "Video Sharing App"
   datasource:
@@ -13,10 +26,13 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL5Dialect
+        generate_statistics: true
+
+
   mail:
     host: localhost
     port: 1025
@@ -30,6 +46,9 @@ spring:
           auth: true
           starttls:
             enable: true
-          connectiontimeout: 5000
+          connection-timeout: 5000
           timeout: 3000
-          writetimeout: 5000
+          write timeout: 5000
+  web:
+    resources:
+      add-mappings: false

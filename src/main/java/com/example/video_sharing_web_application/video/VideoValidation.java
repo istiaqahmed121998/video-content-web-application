@@ -3,6 +3,8 @@ package com.example.video_sharing_web_application.video;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
+
 @Service
 public class VideoValidation implements Predicate<String> {
     /**
@@ -14,6 +16,12 @@ public class VideoValidation implements Predicate<String> {
      */
     @Override
     public boolean test(String s) {
-        return true;
+        return patternMatches(s,"^(http(s)?:\\/\\/)?((w){3}.)?youtu(be|.be)?(\\.com)?\\/.+");
+    }
+
+    public boolean patternMatches(String url, String regexPattern) {
+        return Pattern.compile(regexPattern)
+                .matcher(url)
+                .matches();
     }
 }

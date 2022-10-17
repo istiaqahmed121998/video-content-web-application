@@ -1,18 +1,8 @@
 package com.example.video_sharing_web_application.registration;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
+import javax.validation.constraints.*;
 
-@Getter
-@AllArgsConstructor
-@EqualsAndHashCode
-@ToString
-public class RegistrationRequest {
 
-    private final String firstname;
-    private final String lastname;
-    private final String email;
-    private final String password;
+public record RegistrationRequest(@NotBlank(message = "email can not blank") @Size(min = 3, max = 15) String firstname, @NotBlank(message = "email can not blank") @Size(min = 3, max = 15) String lastname, @NotBlank(message = "email can not blank") @Email(message = "Email should be valid")String email, @Size(min = 5, max = 15) String password) {
+
 }

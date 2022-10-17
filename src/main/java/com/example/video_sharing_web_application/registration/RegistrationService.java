@@ -1,43 +1,68 @@
 package com.example.video_sharing_web_application.registration;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.example.video_sharing_web_application.appuser.AppUser;
 import com.example.video_sharing_web_application.appuser.AppUserRole;
 import com.example.video_sharing_web_application.appuser.AppUserService;
-import com.example.video_sharing_web_application.exception.ResourceNotFoundException;
+import com.example.video_sharing_web_application.exception.ApiRequestException;
 import com.example.video_sharing_web_application.registration.email.EmailSender;
 import com.example.video_sharing_web_application.registration.token.ConfirmationToken;
 import com.example.video_sharing_web_application.registration.token.ConfirmationTokenService;
+import com.example.video_sharing_web_application.user.User;
+import com.example.video_sharing_web_application.user.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
 
+import javax.servlet.http.Cookie;
 import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+import static com.example.video_sharing_web_application.security.SecurityConstants.JWT_ISSUER;
+import static java.util.Arrays.stream;
 
 @Service
 @AllArgsConstructor
 public class RegistrationService {
     private final AppUserService appUserService;
+    private final UserService userService;
     private final EmailValidator emailValidator;
     private final ConfirmationTokenService confirmationTokenService;
 
     private final EmailSender sender;
-    @PostMapping
+    @Transactional
     public String register(RegistrationRequest request) {
-        boolean isValidEmail=emailValidator.test(request.getEmail());
+        boolean isValidEmail=emailValidator.test(request.email());
         if(!isValidEmail){
-            throw new ResourceNotFoundException(String.format("%s email is not valid",request.getEmail()));
+            throw new ApiRequestException(String.format("%s Some error in your email",request.email()));
         }
-        AppUser appUser = new AppUser(request.getFirstname(),request.getLastname(),request.getEmail(), AppUserRole.USER,request.getPassword());
-        String token =appUserService.signUpUser(appUser);
-        String link = "http://localhost:8000/api/v1/registration/confirm?token=" + token;
-        sender.send(
-                request.getEmail(),
-                buildEmail(request.getFirstname(), link));
-        return token;
+        User user = userService.create(new User(request.firstname(),request.lastname()));
+
+        if(user!=null){
+            AppUser appUser=appUserService.signUpUser( new AppUser(request.email(), request.password(),AppUserRole.USER,user));
+            if(appUser!=null){
+                String token = UUID.randomUUID().toString();
+                ConfirmationToken confirmationToken = new ConfirmationToken(token, LocalDateTime.now(),LocalDateTime.now().plusMinutes(15),appUser);
+                confirmationTokenService.saveConfirmationToken(confirmationToken);
+                sender.send(
+                        request.email(),
+                        buildEmail(user.getFirstName(), token));
+                return token;
+            }
+            else {
+                throw new ApiRequestException(String.format("%s User is not created",request.email()));
+            }
+        }
+        else {
+            throw new ApiRequestException(String.format("%s App user is created",request.email()));
+        }
     }
 
-    private String buildEmail(String name, String link) {
+    private String buildEmail(String name, String token) {
         return "<div style=\"font-family:Helvetica,Arial,sans-serif;font-size:16px;margin:0;color:#0b0c0c\">\n" +
                 "\n" +
                 "<span style=\"display:none;font-size:1px;color:#fff;max-height:0\"></span>\n" +
@@ -93,7 +118,7 @@ public class RegistrationService {
                 "      <td width=\"10\" valign=\"middle\"><br></td>\n" +
                 "      <td style=\"font-family:Helvetica,Arial,sans-serif;font-size:19px;line-height:1.315789474;max-width:560px\">\n" +
                 "        \n" +
-                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hi " + name + ",</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> Thank you for registering. Please click on the below link to activate your account: </p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=\"" + link + "\">Activate Now</a> </p></blockquote>\n Link will expire in 15 minutes. <p>See you soon</p>" +
+                "            <p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\">Hi " + name + ",</p><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> Thank you for registering. Please click on the below link to activate your account: </p><blockquote style=\"Margin:0 0 20px 0;border-left:10px solid #b1b4b6;padding:15px 0 0.1px 15px;font-size:19px;line-height:25px\"><p style=\"Margin:0 0 20px 0;font-size:19px;line-height:25px;color:#0b0c0c\"> <a href=http://localhost:3000/confirm/" + token + ">Activate Now</a><p>"+token+"</p> </p></blockquote>\n Link will expire in 15 minutes. <p>See you soon</p>" +
                 "        \n" +
                 "      </td>\n" +
                 "      <td width=\"10\" valign=\"middle\"><br></td>\n" +
@@ -111,19 +136,35 @@ public class RegistrationService {
     public Boolean confirmToken(String token) {
         ConfirmationToken confirmationToken = confirmationTokenService.getToken(token)
                 .orElseThrow(()->{
-            throw new IllegalStateException(String.format("%s token is not valid",token));
+            throw new ApiRequestException(String.format("%s token is not valid",token));
         });
         if(confirmationToken.getConfirmedAt()!=null){
-            throw new IllegalStateException(String.format("%s token is already confirmed",token));
+            throw new ApiRequestException(String.format("%s token is already confirmed",token));
         }
         LocalDateTime expiresAt = confirmationToken.getExpiresAt();
         if(expiresAt.isBefore(LocalDateTime.now())){
-            throw new IllegalStateException(String.format("%s token is expired",token));
+            throw new ApiRequestException(String.format("%s token is expired",token));
         }
-
         confirmationTokenService.setConfirmedAt(token);
-        appUserService.enableAppUser(
-                confirmationToken.getAppUser().getEmail());
-        return true;
+        return appUserService.enableAppUser(confirmationToken.getAppUser().getEmail());
+    }
+
+    public Cookie checkRequestCookie(Cookie[] cookies,String name) {
+        if (cookies!=null){
+            Optional<Cookie> refreshCookie=stream(cookies).filter(cookie -> cookie.getName().equals(name)).findFirst();
+            return refreshCookie.orElse(null);
+        }
+        return null;
+    }
+
+    public AppUser jwtDecode(Algorithm algorithm,String refresh_token) {
+ //use more secure key
+        JWTVerifier verifier = JWT.require(algorithm)
+                .withIssuer(JWT_ISSUER)
+                .build();
+        DecodedJWT jwt = verifier.verify(refresh_token);
+        String email= jwt.getSubject();
+        Optional<AppUser> appUser = appUserService.findByEmail(email);
+        return appUser.orElse(null);
     }
 }

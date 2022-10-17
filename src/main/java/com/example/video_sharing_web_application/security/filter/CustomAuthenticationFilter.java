@@ -3,11 +3,12 @@ package com.example.video_sharing_web_application.security.filter;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
-
 import com.example.video_sharing_web_application.appuser.AppUser;
+import com.example.video_sharing_web_application.exception.ApiError;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,9 +16,9 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -40,14 +41,14 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
             AppUser user = new ObjectMapper().readValue(request.getInputStream(),AppUser.class);
             String username= user.getEmail();
             String password = user.getPassword();
-
             try {
                 UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
                 return authenticationManager.authenticate(authenticationToken);
             }
             catch (AuthenticationException e){
                 response.setContentType(APPLICATION_JSON_VALUE);
-                new ObjectMapper().writeValue(response.getOutputStream(), Map.of("status", 403,"message","Bad Credentials"));
+                response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                new ObjectMapper().writeValue(response.getOutputStream(), new ApiError(HttpStatus.UNAUTHORIZED,"Type correct email & password","Bad Credentials"));
             }
 
         } catch (IOException e) {
@@ -76,23 +77,27 @@ public class CustomAuthenticationFilter extends UsernamePasswordAuthenticationFi
                     .withExpiresAt(new Date(System.currentTimeMillis()+REFRESH_TOKEN_EXPIRATION_TIME))
                     .withIssuer(JWT_ISSUER)
                     .sign(algorithm);
+                Cookie refresh_token_cookie = new Cookie("refresh_token", refresh_token);
+            refresh_token_cookie.setMaxAge(((int)ACCESS_TOKEN_EXPIRATION_TIME)/100);
+            refresh_token_cookie.setSecure(false);
+            refresh_token_cookie.setHttpOnly(true);
+            refresh_token_cookie.setPath("/");
+                response.addCookie(refresh_token_cookie);
             Map<String,Object> tokens = new HashMap<>();
             tokens.put("status",200);
             tokens.put("access_token",access_token);
-            tokens.put("refresh_token",refresh_token);
+            tokens.put("profile_name",user.getUser().getProfileName());
             response.setContentType(APPLICATION_JSON_VALUE);
             new ObjectMapper().writeValue(response.getOutputStream(),tokens);
         } catch (JWTCreationException exception){
             response.setStatus(SC_FORBIDDEN);
             response.setContentType(APPLICATION_JSON_VALUE);
-            new ObjectMapper().writeValue(response.getOutputStream(),exception);
+            new ObjectMapper().writeValue(response.getOutputStream(), new ApiError(HttpStatus.UNAUTHORIZED,exception.getLocalizedMessage(),exception.getMessage()));
         }
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-        logger.info("Authentication failed");
-
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(APPLICATION_JSON_VALUE);
         response.getWriter().print(authException.getLocalizedMessage());
