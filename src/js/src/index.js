@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { HashRouter, Route, Routes } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import { AuthProvider } from "./context/AuthProvider";
@@ -17,7 +17,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <BrowserRouter>
+  <HashRouter>
     <AuthProvider>
     <ToastContainer transition={bounce} theme="colored" position="top-left" closeOnClick={false} pauseOnFocusLoss={false}  pauseOnHover={false}/>
       <Routes>
@@ -25,7 +25,7 @@ root.render(
       </Routes>
       
     </AuthProvider>
-  </BrowserRouter>
+  </HashRouter>
 );
 
 // If you want to start measuring performance in your app, pass a function
