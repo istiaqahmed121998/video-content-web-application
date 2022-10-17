@@ -26,6 +26,7 @@ let svg = createAvatar(style, {
   size: 50,
 });
 const VideoPage = () => {
+    // const MySwal = withReactContent(Swal)
   const [isMore, setIsMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [video, setVideo] = useState({});
@@ -51,6 +52,7 @@ const VideoPage = () => {
         );
         if (videoResponse?.data) {
           if (videoResponse.data?.pageInfo?.totalResults === 1) {
+            document.title=(videoResponse.data.items[0].snippet.title).split(' ').slice(0, 10).join(' ')+"....";
             setYoutubeInfo({
               title: videoResponse.data.items[0].snippet.title,
               description: videoResponse.data.items[0].snippet.description,
@@ -108,6 +110,9 @@ const VideoPage = () => {
       }
     };
     getVideoInfo(params.id);
+    
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
   useEffect(() => {
@@ -117,19 +122,35 @@ const VideoPage = () => {
         setIsLike(false);
       }
     }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth?.access_token]);
-  useEffect(() => {
-    function handleScrollEvent() {
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        console.log("you're at the bottom of the page");
-        // here add more items in the 'filteredData' state from the 'allData' state source.
-      }
-    }
-    window.addEventListener("scroll", handleScrollEvent);
-    return () => {
-      window.removeEventListener("scroll", handleScrollEvent);
-    };
-  }, []);
+  // useEffect(() => {
+  //   function handleScrollEvent() {
+  //     if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+  //       const Toast = MySwal.mixin({
+  //           toast: true,
+  //           position: 'top-right',
+  //           iconColor: 'white',
+  //           customClass: {
+  //             popup: 'colored-toast'
+  //           },
+  //           showConfirmButton: false,
+  //           timer: 1500,
+  //           timerProgressBar: true
+  //         })
+  //          Toast.fire({
+  //           icon: 'success',
+  //           title: 'Success'
+  //         })
+  //       console.log("you're at the bottom of the page");
+  //       // here add more items in the 'filteredData' state from the 'allData' state source.
+  //     }
+  //   }
+  //   window.addEventListener("scroll", handleScrollEvent);
+  //   return () => {
+  //     window.removeEventListener("scroll", handleScrollEvent);
+  //   };
+  // }, [MySwal]);
   useEffect(() => {
     if (isLike) setLikes((prev) => prev + 1);
     else setLikes((prev) => prev - 1);
@@ -369,7 +390,7 @@ const VideoPage = () => {
                 <Card border="light">
                   <Card.Img
                     variant="top"
-                    src=" https://i.ytimg.com/vi/yb-kYt1lpnI/maxresdefault.jpg"
+                    src=" https://i.ytimg.com/vi/yb-kYt1lpnI/maxresdefault.jpg" href="/"
                   />
                   <Card.Body>
                     <Card.Title>Light Card Title</Card.Title>
@@ -396,7 +417,6 @@ const VideoPage = () => {
                 </Card>
               </ListGroup.Item>
               <ListGroup.Item>
-                {" "}
                 <Card border="light">
                   <Card.Img
                     variant="top"

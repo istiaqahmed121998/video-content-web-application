@@ -6,6 +6,12 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthProvider";
 import reportWebVitals from "./reportWebVitals";
 import { disableReactDevTools } from "@fvilers/disable-react-devtools";
+import { cssTransition,ToastContainer } from 'react-toastify';
+import 'animate.css';
+const bounce = cssTransition({
+  enter: "animate__animated animate__bounceIn",
+  exit: "animate__animated animate__bounceOut"
+});
 if (process.env.NODE_ENV === 'production') {
   disableReactDevTools();
 }
@@ -13,9 +19,11 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <BrowserRouter>
     <AuthProvider>
+    <ToastContainer transition={bounce} theme="colored" position="top-left" closeOnClick={false} pauseOnFocusLoss={false}  pauseOnHover={false}/>
       <Routes>
         <Route path="/*" element={<App />} />
       </Routes>
+      
     </AuthProvider>
   </BrowserRouter>
 );

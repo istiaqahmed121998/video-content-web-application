@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import axios from "../api/axios";
-
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+import { toast } from 'react-toastify';
 const Body = styled.div`
   height: 100%;
   display: -ms-flexbox;
@@ -28,7 +30,7 @@ const Register = () => {
   const [message, setMessage] = useState();
   const [show, setShow] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const MySwal = withReactContent(Swal);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -37,24 +39,46 @@ const Register = () => {
         JSON.stringify({ firstname, lastname, email, password }),
         {
           headers: { "Content-Type": "application/json" },
-           withCredentials: true,
+          withCredentials: true,
         }
       );
       if (response?.data) {
         setMessage(response.data.message);
         setShow(true);
-        setTimeout(() => {
-          navigate(
-            location?.state?.previousUrl ? location.state.previousUrl : "/"
-          );
-        }, 5000)();
+        const { value: code } = await MySwal.fire({
+          title: "Input Confirm Code",
+          input: "text",
+          inputLabel: "Check your email address",
+          inputPlaceholder: "Enter your code",
+        });
+        if (code) {
+          try{
+            const confirmResponse = await axios.get(`/confirm?token=${code}`, {
+              headers: { "Content-Type": "application/json" },
+              withCredentials: true,
+            });
+            if (confirmResponse?.data) {
+              if(confirmResponse?.data.status===200){
+                toast.success(confirmResponse?.data.message)
+                navigate('/login')
+              }
+            }
+          }
+          catch(e){
+            console.log(e)
+            if (!e?.response) {
+              toast.error("Server Error")
+            } else {
+              toast.error(e?.response.data.message)
+            }
+          }
+        }
       }
     } catch (err) {
       if (!err?.response) {
-        setErrorMessage("Server Error");
+        setErrorMessage(["Server Error"]);
         setShow(true);
-      }
-      else{
+      } else {
         setErrorMessage(err?.response.data.errors);
         setShow(true);
       }
@@ -65,6 +89,9 @@ const Register = () => {
     setMessage("");
     setShow(false);
   }, [email, password, lastname, firstname]);
+  useEffect(() => {
+    document.title = "Register"
+ }, []);
   return (
     <>
       <Body className="text-center">

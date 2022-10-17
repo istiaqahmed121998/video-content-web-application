@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import useAuth from "./useAuth";
-
+import {  toast } from 'react-toastify';
 
 const useLogout = () => {
   const navigate = useNavigate();
@@ -15,7 +15,7 @@ const useLogout = () => {
         withCredentials: true,
       });
       if (response?.data) {
-        console.log(response.data);
+        toast.info(response.data.message);
         setAuth({});
 
       }

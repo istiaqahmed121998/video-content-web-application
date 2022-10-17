@@ -8,7 +8,6 @@ const Home = () => {
   const [videos, setVideos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errMsg, setErrMsg] = useState("");
-
   useEffect(() => {
     const getVideos = async (count) => {
       try {
@@ -37,6 +36,7 @@ const Home = () => {
         setIsLoading(false);
       }
     };
+    document.title = "Home Page"
     getVideos(5);
   }, []);
   return (

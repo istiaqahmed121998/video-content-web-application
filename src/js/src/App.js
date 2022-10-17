@@ -1,4 +1,5 @@
 import "bootstrap/dist/css/bootstrap.css";
+import 'react-toastify/dist/ReactToastify.css';
 import { Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import Videos from "./pages/Videos";
@@ -10,6 +11,7 @@ import Register from "./pages/Register";
 import AddVideo from "./pages/AddVideo";
 import RequireAuth from "./components/RequireAuth";
 import PersistLogin from "./components/PersistLogin";
+import ConfirmEmail from "./pages/ConfirmEmail";
 function App() {
   return (
     <>
@@ -29,6 +31,7 @@ function App() {
           </Route>
           <Route path="*" element={<NoMatch />} />
         </Route>
+        <Route path="confirm/:token" element={<ConfirmEmail />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
       </Routes>

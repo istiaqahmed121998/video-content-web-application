@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { toast } from "react-toastify";
 import axios from "../api/axios";
 import useAuth from "../hooks/useAuth";
 import useToggle from "../hooks/useToggle";
+
+
 const Body = styled.div`
   height: 100%;
   display: -ms-flexbox;
@@ -28,35 +31,75 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [check, toggleCheck] = useToggle("remember_me", false);
+
+  useEffect(() => {
+    document.title = "Login"
+ }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post(
-        "/login",
-        JSON.stringify({ email, password }),
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
-      if (response?.data) {
-        const access_token = response?.data?.access_token;
-        setAuth({ email, access_token });
-        navigate(
-          location?.state?.previousUrl ? location.state.previousUrl : "/"
-        );
+    toast.promise(
+      axios.post("/login", JSON.stringify({ email, password }), {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      }),
+      {
+        pending: {
+          render() {
+            return "I'm loading";
+          },
+          icon: false,
+
+        },
+        success: {
+          render({ data }) {
+            const access_token = data?.data?.access_token;
+            const profile_name = data?.data?.profile_name;
+            setAuth({ profile_name, email, access_token });
+            navigate(
+              location?.state?.previousUrl ? location.state.previousUrl : "/"
+            );
+            return `Hello ${profile_name}`;
+          },
+          // other options
+          icon: "🟢"
+        },
+        error: {
+          render({ data }) {
+            console.log(data);
+            // When the promise reject, data will contains the error
+            if (!data?.response) {
+              setErrMsg("No Server Response");
+            } else{
+              setErrMsg(data.response.data.message)
+            }
+            return `Try again`;
+            
+          },
+          className: "black-background",
+        },
       }
-    } catch (err) {
-      if (!err?.response) {
-        setErrMsg("No Server Response");
-      } else if (err.response?.status === 400) {
-        setErrMsg("Missing Username or Password");
-      } else if (err.response?.status === 401) {
-        setErrMsg("Unauthorized");
-      } else {
-        setErrMsg("Login Failed");
-      }
-    }
+    );
+
+    // try {
+    //   const response = await
+    //   if (response?.data) {
+    //     const access_token = response?.data?.access_token;
+    //     setAuth({ email, access_token });
+    //     navigate(
+    //       location?.state?.previousUrl ? location.state.previousUrl : "/"
+    //     );
+    //   }
+    // } catch (err) {
+    //   if (!err?.response) {
+    //     setErrMsg("No Server Response");
+    //   } else if (err.response?.status === 400) {
+    //     setErrMsg("Missing Username or Password");
+    //   } else if (err.response?.status === 401) {
+    //     setErrMsg("Unauthorized");
+    //   } else {
+    //     setErrMsg("Login Failed");
+    //   }
+    // }
   };
   useEffect(() => {
     let isAuth = auth.email;

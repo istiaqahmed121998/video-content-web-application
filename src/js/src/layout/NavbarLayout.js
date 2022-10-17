@@ -1,14 +1,22 @@
+import { createAvatar } from "@dicebear/avatars";
+import * as style from "@dicebear/avatars-initials-sprites";
 import { useEffect } from 'react';
 import { Button, Image, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
 import useAuth from "../hooks/useAuth";
 import useLogout from "../hooks/useLogout";
 import useToggle from "../hooks/useToggle";
+
 const NavbarLayout = () => {
   const [check, toggleCheck] = useToggle("remember_me", false);
   const { auth } = useAuth();
   const location=useLocation();
   const logout = useLogout();
+  let svg = createAvatar(style, {
+    seed: auth?.profile_name,
+    dataUri: true,
+    size: 50,
+  });
   const signOut = async()=>{
     await logout();
     if(check)
@@ -64,7 +72,7 @@ const NavbarLayout = () => {
             align="end"
             title={
               <Image
-                src="https://github.com/mdo.png"
+                src={svg}
                 alt="mdo"
                 width="32"
                 height="32"

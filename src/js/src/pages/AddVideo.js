@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 // import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import useAuth from "../hooks/useAuth";
+import { toast } from 'react-toastify';
 const AddVideo = () => {
   const [videourl, setVideoUrl] = useState("");
   const [errormessage, setErrorMessage] = useState([]);
@@ -14,7 +15,7 @@ const AddVideo = () => {
     setErrorMessage([]);
     setMessage("");
     setShow(false);
-    console.warn("click")
+    document.title="Video Add Page"
   }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,6 +31,7 @@ const AddVideo = () => {
         }
       );
       if (response?.data) {
+        toast.success(response.data.message)
         setMessage(response.data.message);
         setErrorMessage("")
         setVideoUrl("");
@@ -37,10 +39,12 @@ const AddVideo = () => {
       }
     } catch (err) {
       if (!err?.response) {
+        toast.error("Server Error")
         setMessage("")
         setErrorMessage(["Server Error"]);
         setShow(true);
       } else if (err.response.status) {
+        toast.error(err.response.data.message)
         setErrorMessage(err.response.data.errors);
         setShow(true);
       }

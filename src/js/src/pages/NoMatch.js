@@ -1,5 +1,9 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 function NoMatch() {
+  useEffect(() => {
+    document.title = "Not found"
+ }, []);
     return (
       <div>
         <h2>Nothing to see here!</h2>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Pagination, Row } from "react-bootstrap";
 import VideoContent from "../components/VideoContent";
-import { useParams,Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import axios from "../api/axios";
 const Videos = () => {
   const [videos, setVideos] = useState([]);
@@ -14,8 +14,8 @@ const Videos = () => {
   useEffect(() => {
     const getVideos = async (count = 0) => {
       try {
-        if(count!==0){
-          count=count-1;
+        if (count !== 0) {
+          count = count - 1;
         }
         const response = await axios.get(`video/?page=${count}`, {
           headers: { "Content-Type": "application/json" },
@@ -46,8 +46,14 @@ const Videos = () => {
         setIsLoading(false);
       }
     };
+    id
+      ? (document.title = "Video Page - " + id)
+      : (document.title = "Video Page");
     getVideos(id);
   }, [id]);
+  //   useEffect(() => {
+  //     document.title = "Video Page - 1"
+  //  }, []);
   return (
     <>
       <div className="py-5">
@@ -78,12 +84,34 @@ const Videos = () => {
 
       {videos.length > 0 && (
         <Pagination className="justify-content-center">
-          {prevPage && <Pagination.Prev  href={`./` +  (parseInt(id)-1)}/>}
+          {prevPage && <Pagination.Prev href={`./` + (parseInt(id) - 1)} />}
           {[...Array(totalPage)].map((x, i) => (
-            <Pagination.Item key={i+1} className={(((id-1)===i) || (id===undefined && i===0)) && "active"} href={id===undefined? (`videos/` +  (parseInt(i)+1)):(`./${(parseInt(i)+1)}`)} >{i+1} </Pagination.Item>
+            <Pagination.Item
+              key={i + 1}
+              className={
+                (id - 1 === i || (id === undefined && i === 0)) && "active"
+              }
+              href={
+                id === undefined
+                  ? `videos/` + (parseInt(i) + 1)
+                  : `./${parseInt(i) + 1}`
+              }
+            >
+              {i + 1}{" "}
+            </Pagination.Item>
           ))}
-          {nextPage && id===undefined && <Pagination.Next href={(`videos/` +  (2))}></Pagination.Next>}
-          {nextPage && id!==undefined &&  <Pagination.Next href={id===undefined? (`videos/` +  (parseInt(id)+1)):(`./${(parseInt(id)+1)}`)}></Pagination.Next>}
+          {nextPage && id === undefined && (
+            <Pagination.Next href={`videos/` + 2}></Pagination.Next>
+          )}
+          {nextPage && id !== undefined && (
+            <Pagination.Next
+              href={
+                id === undefined
+                  ? `videos/` + (parseInt(id) + 1)
+                  : `./${parseInt(id) + 1}`
+              }
+            ></Pagination.Next>
+          )}
         </Pagination>
       )}
     </>
