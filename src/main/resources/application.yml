@@ -1,13 +1,4 @@
-logging:
-  level:
-    org:
-      springframework:
-        security: trace
-      hibernate:
-        stat: debug
 server:
-  servlet:
-    context-path: /
   port: 8000
   error:
     include-message: always
@@ -20,28 +11,26 @@ spring:
     allow-bean-definition-overriding: true
   mvc:
     throw-exception-if-no-handler-found: true
-#    static-path-pattern: /demo/**
   application:
     name: "Video Sharing App"
   datasource:
-    username: root
-    password: 01712274429
-    url: jdbc:mysql://localhost:3306/video_sharing_database
+    username: ${MYSQL_USERNAME}
+    password: ${MYSQL_PASSWORD}
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE_NAME}
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL5Dialect
-        generate_statistics: true
 
 
   mail:
-    host: localhost
-    port: 1025
-    username: hello
-    password: hello
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
